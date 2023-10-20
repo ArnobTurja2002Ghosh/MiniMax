@@ -70,18 +70,18 @@ class Player_Student {
     IDAlphaBeta(state) {
         // here is the syntax to record the time in javascript
         this.searchStartTime = performance.now();
-
         this.bestAction = null;
         this.maxPlayer = state.player;
+        console.log(state.player);
         for(let d=0; d<this.config.maxDepth; d++){
             console.log("trying1");
             this.currentMaxDepth = d;
             try{
                 console.log("trying2");
                 console.log(this.currentBestAction);
-                this.AlphaBeta(state, -10000000, 10000000, 0, true);
+                let val = this.AlphaBeta(state, -10000000, 10000000, 0, true);
                 this.bestAction = this.currentBestAction;
-                console.log(this.currentBestAction);
+                console.log(this.currentBestAction, val);
             }
             catch(TimeOutException){
                 console.log("exception");
@@ -130,7 +130,7 @@ class Player_Student {
         }
 
         if(depth>this.currentMaxDepth){
-            return this.eval(state,state.player);
+            return this.eval(state,this.maxPlayer);
         }
         
         if(max){
@@ -143,6 +143,7 @@ class Player_Student {
                 child.doAction(actions[a]);
                 let value = this.AlphaBeta(child, alpha, beta, depth+1, false);
                 console.log(value, max);
+                if(depth==0){console.log('value', a, value);}
                 if(value > max){
                     console.log("v greater than max");
                     max = value;
