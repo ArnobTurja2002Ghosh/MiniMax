@@ -43,37 +43,14 @@ class Player_Student {
         return this.IDAlphaBeta(state);
     }
 
-    // Student TODO: Implement this function
-    //
-    // This funtion should implement Iterative Deepening Alpha Beta (IDAB). It should call the
-    // separate AlphaBeta function which implements the MiniMax search with Alpha Beta pruning.
-    // This function should use the this.config configuration options for the following:
-    // 
-    //     config.timeLimit - search time limit in milliseconds
-    //                      - timeLimit of 0 means there is no time limit
-    //     config.maxDepth  - maximum depth for IDAB  (depth > maxDepth) = eval()
-    //                      - maxDepth of 0 means no max depth
-    //
-    //     You can assume one of timeLimit or maxDepth will always be greater than 0
-    //
-    // Please note that both of these limits should be used, and whichever one happens first
-    // should be the stopping condition.
-    //
-    // Be sure to return the best action from the last COMPLETED AlphaBeta search.
-    //
-    // Args:
-    //    state        : the state for which to find the best action for the player to move
-    //
-    // Returns:
-    //    action (int) : the best action for the player to move
-    //
+  
     IDAlphaBeta(state) {
         // here is the syntax to record the time in javascript
         this.searchStartTime = performance.now();
         this.bestAction = null;
         this.maxPlayer = state.player;
         console.log(state.player);
-        for(let d=0; d<this.config.maxDepth; d++){
+        for(let d=0; d<=this.config.maxDepth; d++){
             console.log("trying1");
             this.currentMaxDepth = d;
             try{
@@ -123,13 +100,11 @@ class Player_Student {
         // here is the syntax to calculate how much time has elapsed since the search began
         // you should compare this to this.config.timeLimit and throw an error if time up
         let timeElapsed = performance.now()-this.searchStartTime;
-        console.log("time elapsed", timeElapsed);
         if(timeElapsed>this.config.timeLimit){
-            console.log("Out of limit");
             throw TimeOutException;
         }
 
-        if(depth>this.currentMaxDepth){
+        if(depth>this.currentMaxDepth || state.winner() == state.player || state.winner() == (state.player+1)%2){
             return this.eval(state,this.maxPlayer);
         }
         
@@ -150,6 +125,12 @@ class Player_Student {
                     if(depth==0){this.currentBestAction = actions[a];}
 
                 }
+                if(value>=beta){
+                    return max;
+                }
+                if(value>alpha){
+                    alpha = value;
+                }
             }
             return max;
         }
@@ -163,44 +144,101 @@ class Player_Student {
                 if(value < min){
                     min=value;
                 }
+                if(value<=alpha){
+                    return min;
+                }
+                if(value<beta){
+                    beta = value;
+                }
             }
             return min;
         }
     }
 
     
-    // Student TODO: Implement this function
-    //
-    // This funtion should compute a heuristic evaluation of a given state for a given player.
-    // It should return a large positive value for a 'good' state for the player, and a large
-    // negative value for a 'bad' state for the player. Assign the maximum possible values to
-    // winning and losing states, and be sure to assign values in between for states of a game
-    // in progress. 
-    //
-    // This is one of the most important factors in your program performing well in the
-    // class competition - poor heursitic functions cannot always be saved by good search.
-    //
-    // NOTE: Be sure to pass the player variable into this function, JS will not throw any
-    //       error if you call it with just the state, which will lead to odd behavior.
-    //       Most of the time, you will want to call this with player = this.maxPlayer
-    //
-    // Args:
-    //    state        : the state to evaluate
-    //    player       : the player to evaluate the state for
-    //
-    // Returns:
-    //    value (int)  : the heuristic evaluation of the state
-    //
+
+    // This function is basically what I understood from the strategy the professor shared with us.
+    checkPossibility(x, y, dir, connect, player, state) {
+        let p = player;
+        if (state.get(x, y) == (p+1)%2) {return false;}
+        let cx = x, cy = y;
+        let windowscore=1; let atLeastOne = false;
+        if(state.get(cx, cy) == p){atLeastOne=true;}
+        for (let c=0; c<connect-1; c++) {
+            cx += dir[0]; cy += dir[1];
+            if (!state.isValid(cx, cy)) { return false; }
+            if (state.get(cx, cy) != (p+1)%2) { windowscore+=1; }
+            if(state.get(cx, cy) == p){atLeastOne=true;}
+        }
+        if(windowscore == connect && atLeastOne){return true};
+        return false;
+    }
+    // There is no inspiration of the idea behind this function because I am just saying that it is better to have your dots clustered (connected) to each other
+    check2(x, y, dir, connect, player, state) {
+        let p = player;
+        if (state.get(x, y) != p) {return false;}
+        let cx = x, cy = y;
+        for (let c=0; c<connect-1; c++) {
+            cx += dir[0]; cy += dir[1];
+            if (!state.isValid(cx, cy)) { return false; }
+            if (state.get(cx, cy) != p) {return false;}
+            if (state.get(cx, cy) == p) { return true; }
+        }
+        
+        return false;
+    }
+    // Again, no source for this idea, but when you are trying to cluster your dots, your cluster might be of any shape.
+    // So try to make a linear connection
+    check3(x, y, dir, connect, player, state) {
+        let p = player; let three;
+        if (state.get(x, y) == p) {three =1;}
+        if (state.get(x, y) != p) {three =0;}
+        let cx = x, cy = y;
+        for (let c=0; c<connect-1; c++) {
+            cx += dir[0]; cy += dir[1];
+            if (!state.isValid(cx, cy)) { return false; }
+            if (state.get(cx, cy) != p) {return false;}
+            if (state.get(cx, cy) == p) { three +=1; }
+        }
+        if(three == 3){
+            return true;}
+    }
     eval(state, player) {
         let winner = state.winner();
         if      (winner == player)              { return 10000; }   // win, return large#
         else if (winner == (player + 1) % 2)    { return -10000; }  // loss, return -large#
         else if (winner == PLAYER_DRAW)         { return 0; }       // draw, return 0
         else if (winner == PLAYER_NONE) {   
-            
+            let score = 0;
+
+            for (let d=0; d<state.dirs.length; d++) {
+                // Check to see if there's a win in that direction from every place on the board
+                for (let x=0; x<state.width; x++) {
+                    for (let y=0; y<state.height; y++) {
+                        //console.log("Possible?", this.checkPossibility(x, y, state.dirs[d], state.connect, player, state), x, y);
+                        if(this.checkPossibility(x, y, state.dirs[d], state.connect, player, state)){
+                            score+=1;
+                        }
+                        
+                        if(this.check2(x, y, state.dirs[d], state.connect, player, state)){
+                            score+=20;
+                        }
+
+                        if(this.check3(x, y, state.dirs[d], state.connect, player, state)){
+                            score+=30;
+                        }
+
+                    }
+                }
+
+            }
+
+            console.log("score", score);
             // where your custom computed heuristic should go
             // it should be between large# and -large#
-            return 0; 
+
+            return score; 
+
         }
     }
 
