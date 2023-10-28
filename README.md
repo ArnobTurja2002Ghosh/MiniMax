@@ -1,5 +1,3 @@
-# MiniMax
+# AlphaBeta
 
-At least it is returning something.
-
-Now I need to work on eval.
+Not so confident about the evaluation function tho.
