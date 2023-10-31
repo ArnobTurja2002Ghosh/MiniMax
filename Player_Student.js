@@ -68,31 +68,7 @@ class Player_Student {
         return this.bestAction;
     }
 
-    // Student TODO: Implement this function
-    //
-    // This funtion should implement MiniMax with Alpha-Beta Pruning. It is recommended
-    // to first get vanilla MiniMax search working properly before implementing the Alpha
-    // Beta pruning enhancement. 
-    //
-    // Please be aware that this function does not return an action - it returns a state value.
-    // Actions must be set to a class member variable, rather than returned. 
-    //
-    // It is important that you COPY states [via state.copy()] before generating children,
-    // otherwise you will be modifying reference to states on different levels of recursion.
-    //
-    // (There is a fun optimization you can do that doesn't require copying! Try to find it)
-    //
-    //
-    // Args:
-    //    state        : the state for the current node in the search tree
-    //    alpha (int)  : the current alpha value of the search
-    //    beta  (int)  : the current beta value of the search
-    //    depth (int)  : the current depth of the search
-    //    max (bool)   : whether the current player is maximizing or not
-    //
-    // Returns:
-    //    value (int)  : the value of the state
-    //
+
     AlphaBeta(state, alpha, beta, depth, max) {
 
         // code for AlphaBeta goes here
@@ -175,38 +151,52 @@ class Player_Student {
     }
     // There is no inspiration of the idea behind this function because I am just saying that it is better to have your dots clustered (connected) to each other
     check2(x, y, dir, connect, player, state) {
-        let p = player;
-        if (state.get(x, y) != p) {return false;}
+        let p = player; let two; let empty;
+        if (state.get(x, y) == p) {two =1; empty =0;}
+        else if (state.get(x, y) == PLAYER_NONE) {two =0; empty=1;}
+        else if (state.get(x, y) == (p+1)%2){return false;}
         let cx = x, cy = y;
         for (let c=0; c<connect-1; c++) {
             cx += dir[0]; cy += dir[1];
             if (!state.isValid(cx, cy)) { return false; }
-            if (state.get(cx, cy) != p) {return false;}
-            if (state.get(cx, cy) == p) { return true; }
+            else if (state.get(cx, cy) == PLAYER_NONE) {empty +=1;}
+            else if (state.get(cx, cy) == p) { two +=1; }
         }
-        
+        if(two == 2 && empty == 2){
+            return true;}
         return false;
     }
     // Again, no source for this idea, but when you are trying to cluster your dots, your cluster might be of any shape.
     // So try to make a linear connection
     check3(x, y, dir, connect, player, state) {
-        let p = player; let three;
-        if (state.get(x, y) == p) {three =1;}
-        if (state.get(x, y) != p) {three =0;}
+        let p = player; let three; let empty;
+        if (state.get(x, y) == p) {three =1; empty =0;}
+        else if (state.get(x, y) == PLAYER_NONE) {three =0; empty=1;}
+        else if (state.get(x, y) == (p+1)%2){return false;}
         let cx = x, cy = y;
         for (let c=0; c<connect-1; c++) {
             cx += dir[0]; cy += dir[1];
             if (!state.isValid(cx, cy)) { return false; }
-            if (state.get(cx, cy) != p) {return false;}
-            if (state.get(cx, cy) == p) { three +=1; }
+            else if (state.get(cx, cy) == PLAYER_NONE) {empty +=1;}
+            else if (state.get(cx, cy) == p) { three +=1; }
         }
-        if(three == 3){
+        if(three == 3 && empty == 1){
             return true;}
     }
+    //Keith Galli
     eval(state, player) {
         let winner = state.winner();
-        if      (winner == player)              { return 10000; }   // win, return large#
-        else if (winner == (player + 1) % 2)    { return -10000; }  // loss, return -large#
+        let turns =0;
+
+        for (let x=0; x<state.width; x++) {
+            for (let y=0; y<state.height; y++) {
+                if(state.get(x, y)!=PLAYER_NONE){
+                    turns +=1;
+                }
+            }
+        }
+        if      (winner == player)              { return 10000-turns; }   // win, return large#
+        else if (winner == (player + 1) % 2)    { return -10000+turns; }  // loss, return -large#
         else if (winner == PLAYER_DRAW)         { return 0; }       // draw, return 0
         else if (winner == PLAYER_NONE) {   
             let score = 0;
@@ -221,11 +211,11 @@ class Player_Student {
                         }
                         
                         if(this.check2(x, y, state.dirs[d], state.connect, player, state)){
-                            score+=20;
+                            score+=2;
                         }
 
                         if(this.check3(x, y, state.dirs[d], state.connect, player, state)){
-                            score+=30;
+                            score+=3;
                         }
 
                     }
@@ -233,7 +223,7 @@ class Player_Student {
 
             }
 
-            console.log("score", score);
+            console.log("score", score, "turns", turns);
             // where your custom computed heuristic should go
             // it should be between large# and -large#
 
