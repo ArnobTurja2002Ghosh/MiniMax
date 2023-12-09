@@ -50,7 +50,8 @@ class Player_Student {
         this.bestAction = null;
         this.maxPlayer = state.player;
         console.log(state.player);
-        for(let d=0; d<=this.config.maxDepth; d++){
+        let maxDepth = this.config.maxDepth==0? 10000000:this.config.maxDepth;
+        for(let d=1; d<=maxDepth; d++){
             console.log("trying1");
             this.currentMaxDepth = d;
             try{
@@ -58,7 +59,7 @@ class Player_Student {
                 console.log(this.currentBestAction);
                 let val = this.AlphaBeta(state, -10000000, 10000000, 0, true);
                 this.bestAction = this.currentBestAction;
-                console.log(this.currentBestAction, val);
+                console.log("best action", this.currentBestAction, "val", val);
             }
             catch(TimeOutException){
                 console.log("exception");
@@ -76,7 +77,7 @@ class Player_Student {
         // here is the syntax to calculate how much time has elapsed since the search began
         // you should compare this to this.config.timeLimit and throw an error if time up
         let timeElapsed = performance.now()-this.searchStartTime;
-        if(timeElapsed>this.config.timeLimit){
+        if(timeElapsed>this.config.timeLimit && this.config.timeLimit>0){ // when the time limit is zero, it uses the depth limit
             throw TimeOutException;
         }
 
